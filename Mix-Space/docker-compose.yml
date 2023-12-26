@@ -1,0 +1,62 @@
+
+version: '3.8'
+
+services:
+  app:
+    container_name: Mx-Space
+    image: innei/mx-server:latest
+    command: bash ./docker-run.sh
+    environment:
+      - TZ=Asia/Shanghai
+      - NODE_ENV=production
+      - ALLOWED_ORIGINS
+      - JWT_SECRET
+      - ENCRYPT_KEY
+      - ENCRYPT_ENABLE
+
+    volumes:
+      - ./data/mx-space:/root/.mx-space
+    ports:
+      - '127.0.0.1:2333:2333'
+    depends_on:
+      - mongo
+      - redis
+    links:
+      - mongo
+      - redis
+    networks:
+      - 1panel-network
+    restart: always
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://127.0.0.1:2333/api/v2/ping']
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+
+  mongo:
+    container_name: mongo
+    image: mongo
+    volumes:
+      - ./data/db:/data/db
+    ports:
+      - "127.0.0.1:27017:27017"
+    networks:
+      - 1panel-network
+    restart: always
+
+  redis:
+    container_name: 'redis'
+    image: 'docker.dragonflydb.io/dragonflydb/dragonfly'
+    networks:
+      - 1panel-network
+    ulimits:
+      memlock: -1
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - ./data/redis:/data
+
+networks:
+  1panel-network:
+    external: true
